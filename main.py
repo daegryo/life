@@ -1,4 +1,5 @@
 import pygame
+import copy
 
 
 class Board:
@@ -22,7 +23,7 @@ class Board:
         for i in range(self.height):
             for j in range(self.width):
                 if self.board[i][j] == 1:
-                    pygame.draw.rect(screen, 'white',
+                    pygame.draw.rect(screen, 'green',
                                      (self.left + (self.cell_size * j), self.top + (self.cell_size * i),
                                       self.cell_size, self.cell_size), 0)
                 else:
@@ -50,17 +51,57 @@ class Board:
         cell = self.get_cell(mouse_pos)
         self.on_click(cell)
 
+    def next_move(self):
+        cop = copy.deepcopy(self.board)
+        for i in range(self.height):
+            for j in range(self.width):
+                if self.board[i][j] == 0:
+                    count = 0
+                    for l in range(i - 1, i + 2):
+                        for k in range(j - 1, j + 2):
+                            try:
+                                if cop[l][k] == 1:
+                                    count += 1
+                            except IndexError:
+                                pass
+                    if count == 3:
+                        cop[i][j] = 1
+                else:
+                    count = 0
+                    for l in range(i - 1, i + 2):
+                        for k in range(j - 1, j + 2):
+                            if l == i and k == j:
+                                continue
+                            try:
+                                if cop[l][k] == 1:
+                                    count += 1
+                            except IndexError:
+                                pass
+                    if count < 2 or count > 3:
+                        cop[i][j] = 0
+        self.board = copy.deepcopy(cop)
 
-board = Board(5, 7)
+
+board = Board(20, 20)
 running = True
 size = 600, 600
 screen = pygame.display.set_mode(size)
+life_on = -1
+fps = 60
+clock = pygame.time.Clock()
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            board.get_click(event.pos)
+            if event.button == 1:
+                board.get_click(event.pos)
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            life_on *= -1
+
     screen.fill((0, 0, 0))
+    if life_on == 1:
+        board.next_move()
     board.render(screen)
+    clock.tick(fps)
     pygame.display.flip()
